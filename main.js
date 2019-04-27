@@ -9,7 +9,7 @@ const states = {
     empty: { character: ' ' },
     shortcut: { character: 'Ͳ', color: 'red' },
     goal: { character: 'G', color: 'green' },
-    player: { character: 'Y' }
+    player: { character: 'Y', color: 'aqua' }
 };
 
 for (let [key, value] of Object.entries(states)) {
@@ -44,7 +44,7 @@ const init = () => {
             row.appendChild(cell);
 
             cells[x][y] = cell;
-            setCell(x, y, 'empty');
+            setCellState(x, y, 'empty');
         }
         table.appendChild(row);
         table.appendChild(document.createTextNode('\n'))
@@ -77,17 +77,20 @@ const init = () => {
     window.addEventListener('keydown', onKeyDown);
     window.addEventListener('keyup', onKeyUp);
 
-    unpause();
+    showText('Welcome. This game is played with WASD or Arrow Keys. To win a level [aqua]Y[]ou need to reach the [green]G[]oal. You can pay 10 seconds of lifetime to pass the [red]Ͳ[]rap, or take the long way around. Press Enter or Space to Start.');
 }
 
-const setCell = (x, y, stateName) => {
+const setCellContent = (x, y, character, color, opacity, textDecoration) => {
     const cell = cells[x][y];
-    cell.textContent = states[stateName].character;
-    if (states[stateName].color) {
-        cell.style.color = states[stateName].color;
-    } else {
-        cell.style.color = '';
-    }
+    cell.textContent = character;
+    cell.style.color = color || '';
+    cell.style.opacity = opacity || '';
+    cell.style.textDecoration = textDecoration || '';
+}
+
+const setCellState = (x, y, stateName) => {
+    const { character, color } = states[stateName];
+    setCellContent(x, y, character, color);
 }
 
 const symPad = (string, length, char) => {
@@ -116,7 +119,78 @@ const render = (chunk) => {
     for (let x = 0; x < width; x++) {
         for (let y = 0; y < height; y++) {
             const state = chunk[x][y] || 'empty';
-            setCell(x, y, state);
+            setCellState(x, y, state);
+        }
+    }
+}
+
+let textShowing = false;
+const showText = (text) => {
+    textShowing = true;
+    const padding = 3;
+
+    const words = text.split(' ');
+    let lines = [''];
+    let currentLine = '';
+    let lineLength = 0;
+    words.forEach(word => {
+        const wordLength = word.replace(/\[.*?\]/g, '').length;
+        if (lineLength + 1 + wordLength > width - 2 * (padding + 2)) {            
+            lines.push(currentLine.trim());
+            lines.push('');
+            currentLine = word;
+            lineLength = wordLength;
+        } else {
+            currentLine = currentLine + ' ' + word;
+            lineLength += 1 + wordLength;
+        }
+    });
+    lines.push(currentLine);
+    const colors = lines.map(line => {
+        const changes = line.match(/\[.*?\]/g);
+        if (changes) {
+            let prevIndex = 0;
+            return changes.map(match => {
+                const index = line.indexOf(match, prevIndex);
+                prevIndex = index + 1;
+                return {
+                    pos: line.substring(0, index).replace(/\[.*?\]/g, '').length,
+                    color: match.substring(1, match.length - 1)
+                };
+            })
+        } else {
+            return [];
+        }
+    });
+    lines = lines.map((line, index) => {
+        const pureText = line.replace(/\[.*?\]/g, '');
+        const padded = symPad(pureText, width - 2 * padding, ' ');
+        const shift = padded.indexOf(pureText[0]);
+        colors[index].forEach(color => color.pos += shift)
+
+        return padded;
+    });
+    console.log(lines, colors);
+    let currentColor = '';
+    for (let y = 0; y < height; y++) {
+        const line = lines[y - padding - 1];
+        const lineColors = colors[y - padding - 1] || [];
+        let nextColor = lineColors.shift();
+        for (let x = 0; x < width; x++) {
+            if (x < padding || x >= width - padding || y < padding || y >= height - padding) {
+                cells[x][y].style.opacity = '0.1';
+            } else if (x === padding || x === width - padding - 1 || y === padding || y === height - padding - 1) {
+                setCellContent(x, y, '#', '');
+            } else if (line) {
+                if (nextColor && nextColor.pos === x - padding) {
+                    currentColor = nextColor.color;
+                    nextColor = lineColors.shift();
+                }
+                const character = line[x - padding];
+                setCellContent(x, y, character, currentColor, '', currentColor ? 'underline' : '');
+            } else {
+                setCellContent(x, y, ' ', '');
+            }
         }
     }
 }
@@ -136,6 +210,8 @@ const handleCollision = (colission, dx, dy) => {
     }
 }
 
+let ended = false;
+
 const keysDown = {};
 
 const onKeyDown = (evt) => {
@@ -143,6 +219,24 @@ const onKeyDown = (evt) => {
         return;
     }
     keysDown[evt.key] = true;
+
+    if (paused) {
+        switch (evt.key) {
+            case 'Enter':
+            case ' ':
+                if (textShowing) {
+                    if (ended) {
+                        window.location.reload();
+                    } else {
+                        render(map.getChunk(0, 0, width, height));
+                        textShowing = false;
+                        unpause();
+                    }
+                }
+                break;
+        }
+        return;
+    }
 
     let dx, dy;
     switch (evt.key) {
@@ -172,7 +266,6 @@ const onKeyDown = (evt) => {
         handleCollision(colission, dx, dy);
     }
     render(map.getChunk(0, 0, width, height));
-    renderScores();
 }
 
 const onKeyUp = (evt) => {
@@ -184,17 +277,18 @@ const loadLevel = async () => {
     if (level) {
         await map.load(`./maps/${level}.js`);
     } else {
-        alert('Needs more levels!');
-        window.location.reload();
+        window.setTimeout(() => showText('Needs more levels!'));
+        pause();
+        ended = true;
     }
 }
 
 const reduceHealth = () => {
     scores.health -= 1;
-    renderScores();
     if (scores.health <= 0) {
-        alert('It ends here');
-        window.location.reload();
+        window.setTimeout(() => showText(`You died, but reached [aqua]${scores.points}[] points!`));
+        pause();
+        ended = true;
     }
 }
 
@@ -226,6 +320,7 @@ const gameTick = function (time) {
         window.requestAnimationFrame(gameTick);
     }
 
+    renderScores();
     lastTime = time;
 };
 
