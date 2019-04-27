@@ -1,20 +1,24 @@
+import Map from './map.js';
+
 const onload = () => {
     const width = 60;
     const height = 24;
 
     const states = {
-        wall: { character: '#' },
+        wall: { character: '#', color: 'grey' },
         empty: { character: ' ' }
     };
 
-    for ([key, value] of Object.entries(states)) {
+    for (let [key, value] of Object.entries(states)) {
         value.name = key;
     }
 
     const cells = [];
     const scores = {}
 
-    const init = () => {
+    const map = new Map();
+
+    const init = async () => {
         const table = document.getElementById('game');
         while (table.firstChild) {
             table.removeChild(table.firstChild);
@@ -62,12 +66,20 @@ const onload = () => {
 
         setHealth(100);
         setPoints(0);
+
+        await map.load('./maps/intro.js');
+        render(map.getChunk(0, 0, width, height));
     }
 
     const setCell = (x, y, stateName) => {
         const cell = cells[x][y];
         cell.state = stateName;
         cell.dom.textContent = states[stateName].character;
+        if(states[stateName].color) {
+            cell.dom.style.color = states[stateName].color;
+        } else {
+            delete cell.dom.style.color;
+        }
     }
 
     const leftPad = (string, length, char) => Array(Math.max(length - string.length, 0) + 1).join(char) + string;
@@ -85,11 +97,20 @@ const onload = () => {
         scores.pointsDom.textContent = pointsString;
     }
 
+    const render = (chunk) => {
+        for (let x = 0; x < width; x++) {
+            for (let y = 0; y < height; y++) {
+                const state = chunk[x][y] || 'empty';
+                setCell(x, y, state);
+            }
+        }
+    }
+
     init();
 };
 
 if (document.readyState === "loading") {
-    document.onreadystatechange(onload);
+    document.addEventListener('load', onload);
 } else {
     onload();
 }
