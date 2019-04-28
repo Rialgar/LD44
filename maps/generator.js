@@ -188,17 +188,35 @@ const pokeHole = (from, to) => {
 
     if (neighbourFrom.borderX) {
         const x = neighbourFrom.borderX;
-        const y = randomValue(neighbourFrom.borderTop + 1, neighbourFrom.borderBottom - 1);
+        const y = neighbourFrom.holeY || randomValue(neighbourFrom.borderTop + 1, neighbourFrom.borderBottom - 1);
         neighbourFrom.holeY = y;
         neighbourTo.holeY = y;
         return { x, y };
     } else {
-        const x = randomValue(neighbourFrom.borderLeft + 1, neighbourFrom.borderRight - 1);
+        const x = neighbourFrom.holeX || randomValue(neighbourFrom.borderLeft + 1, neighbourFrom.borderRight - 1);
         const y = neighbourFrom.borderY;
         neighbourFrom.holeX = x;
         neighbourTo.holeX = x;
         return { x, y };
     }
+}
+
+const placeDoor = (map, longest, minIndex, maxIndex, door, key) => {
+    const doorRoomIndex = randomValue(minIndex, maxIndex);
+    const doorPlace = pokeHole(longest[doorRoomIndex], longest[doorRoomIndex + 1])
+    map[doorPlace.y][doorPlace.x] = door;
+    const keyRoomIndex = randomValue(0, doorRoomIndex - 1);
+    let keyRoom = longest[keyRoomIndex];
+    while (keyRoom.sideArms.length > 0 && Math.random() < 0.5) {
+        keyRoom = keyRoom.sideArms[randomValue(0, keyRoom.sideArms.length - 1)];
+    }
+    let keyPlace = keyRoom.randomPlace();
+    while (map[keyPlace.y][keyPlace.x] != ' ') {
+        keyPlace = keyRoom.randomPlace();
+    }
+    map[keyPlace.y][keyPlace.x] = key;
+
+    return doorRoomIndex;
 }
 
 export const data = ({ x, y }) => {
@@ -290,11 +308,16 @@ export const data = ({ x, y }) => {
             j += 1;
         }
     }
-    possibleShortCuts.sort((a,b) => b.length - a.length);
+    possibleShortCuts.sort((a, b) => b.length - a.length);
     console.log(possibleShortCuts.map(s => s.length));
     const chosenShortcut = possibleShortCuts[randomValue(0, Math.min(possibleShortCuts.length - 1, 3))];
     const trapHole = pokeHole(chosenShortcut.from, chosenShortcut.to);
     map[trapHole.y][trapHole.x] = 'Ͳ';
+
+    const doorRoom2Index = placeDoor(map, longest, 3, longest.length - 2, 'd', 'k');
+    const doorRoom1Index = placeDoor(map, longest, 0, doorRoom2Index - 1, 'D', 'K');
+    
+    console.log(doorRoom1Index, doorRoom2Index);
 
     return map.map(row => row.join('')).join('\n');
 }
