@@ -14,6 +14,7 @@ class Room {
         this.height = height;
 
         this.neighbours = [];
+        this.sideArms = [];
 
         this.bottom = top + height - 1;
         this.right = left + width - 1;
@@ -258,6 +259,42 @@ export const data = ({ x, y }) => {
         const hole = pokeHole(longest[i], longest[i + 1]);
         map[hole.y][hole.x] = ' ';
     }
+
+    longest.forEach(room => room.connected = true);
+    const queue = rooms.filter(room => !room.connected);
+    while (queue.length > 0) {
+        const next = queue.shift();
+        const connectionCandidates = next.neighbours.filter(n => n.room.connected);
+        if (connectionCandidates.length > 0) {
+            const connection = connectionCandidates[randomValue(0, connectionCandidates.length - 1)].room;
+            const hole = pokeHole(next, connection);
+            map[hole.y][hole.x] = ' ';
+            next.connected = true;
+            connection.sideArms.push(next);
+        } else {
+            queue.push(next);
+        }
+    }
+
+    const possibleShortCuts = [];
+    for (let i = 0; i < longest.length - 2; i++) {
+        let j = 0;
+        let room = longest[i];
+        while (room) {
+            room.neighbours.forEach(n => {
+                if (!n.holeX && !n.holeY && longest.indexOf(n.room) > i) {
+                    possibleShortCuts.push({ from: room, to: n.room, length: longest.indexOf(n.room) - i - (j > 0 ? 1 : 0) });
+                }
+            });
+            room = longest[i].sideArms[j];
+            j += 1;
+        }
+    }
+    possibleShortCuts.sort((a,b) => b.length - a.length);
+    console.log(possibleShortCuts.map(s => s.length));
+    const chosenShortcut = possibleShortCuts[randomValue(0, Math.min(possibleShortCuts.length - 1, 3))];
+    const trapHole = pokeHole(chosenShortcut.from, chosenShortcut.to);
+    map[trapHole.y][trapHole.x] = 'Ͳ';
 
     return map.map(row => row.join('')).join('\n');
 }
