@@ -305,7 +305,7 @@ export const data = ({ x, y }) => {
     coinRooms.forEach(room => {
         let coinPlace = room.randomPlace();
         while(map[coinPlace.y][coinPlace.x] !== ' '){
-            let coinPlace = room.randomPlace();
+            coinPlace = room.randomPlace();
         };
         map[coinPlace.y][coinPlace.x] = 'C';
     });

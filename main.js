@@ -97,7 +97,7 @@ const init = () => {
     showText('Welcome. This game is played with WASD or Arrow Keys. To win a level [aqua]Y[]ou need to reach the [green]G[]oal. ' +
         'You can pay 10 seconds of lifetime to pass the [red]Ͳ[]rap, or take the long way around. ' +
         'Orange [darkorange]K[]eys open orange [darkorange]D[]oors. Blue [dodgerblue]k[]eys open blue [dodgerblue]d[]oors. ' +
-        'Completing a level is worth 10 points. Collecting a [yellow]C[]oin is worth 1. ' +
+        'Completing a level is worth 10 points. Collecting a [yellow]C[]oin is worth 1. \n' +
         'Press Enter or Space to start.');
     inited = true;
 }
@@ -155,7 +155,7 @@ let textShowing = false;
 const showText = (text) => {
     textShowing = true;
     const margin = 2;
-    const padding = 4;
+    const padding = 3;
 
     const words = text.split(' ');
     let lines = [''];
@@ -163,7 +163,7 @@ const showText = (text) => {
     let lineLength = 0;
     words.forEach(word => {
         const wordLength = word.replace(/\[.*?\]/g, '').length;
-        if (lineLength + 1 + wordLength > width - 2 * (margin + 1 + padding)) {
+        if (word.indexOf('\n') === 0 || lineLength + 1 + wordLength > width - 2 * (margin + 1 + padding)) {
             lines.push(currentLine.trim());
             lines.push('');
             currentLine = word;
@@ -335,7 +335,15 @@ const loadLevel = async () => {
 const reduceHealth = () => {
     scores.health -= 1;
     if (scores.health <= 0) {
-        window.setTimeout(() => showText(`You died, but reached [aqua]${scores.points}[] points!`));
+        const localRecord = parseInt(localStorage.highScore) || 0;
+        let scoreSentance = ''
+        if(localRecord < scores.points){
+            scoreSentance = `That is a new personal High Score! \nYour previous was ${localRecord}.`;
+            localStorage.highScore = scores.points;            
+        } else {
+            scoreSentance = `Your personal High Score is ${localRecord}.`;
+        }
+        window.setTimeout(() => showText(`You died, but reached [aqua]${scores.points}[] points! \n \n${scoreSentance}`));
         pause();
         ended = true;
     }
