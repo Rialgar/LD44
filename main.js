@@ -13,7 +13,8 @@ const states = {
     door1: { character: 'D', color: 'darkorange' },
     key1: { character: 'K', color: 'darkorange' },
     door2: { character: 'd', color: 'dodgerblue' },
-    key2: { character: 'k', color: 'dodgerblue' }
+    key2: { character: 'k', color: 'dodgerblue' },
+    coin: { character: 'C', color: 'yellow'}
 };
 
 for (let [key, value] of Object.entries(states)) {
@@ -96,6 +97,7 @@ const init = () => {
     showText('Welcome. This game is played with WASD or Arrow Keys. To win a level [aqua]Y[]ou need to reach the [green]G[]oal. ' +
         'You can pay 10 seconds of lifetime to pass the [red]Ͳ[]rap, or take the long way around. ' +
         'Orange [darkorange]K[]eys open orange [darkorange]D[]oors. Blue [dodgerblue]k[]eys open blue [dodgerblue]d[]oors. ' +
+        'Completing a level is worth 10 points. Collecting a [yellow]C[]oin is worth 1. ' +
         'Press Enter or Space to start.');
     inited = true;
 }
@@ -152,8 +154,8 @@ const render = (chunk) => {
 let textShowing = false;
 const showText = (text) => {
     textShowing = true;
-    const margin = 3;
-    const padding = 2;
+    const margin = 2;
+    const padding = 4;
 
     const words = text.split(' ');
     let lines = [''];
@@ -250,6 +252,11 @@ const handleCollision = (colission, dx, dy) => {
                 map.setCell(colission.x, colission.y, 'empty');
                 scores[key] = false;
             }
+            break;
+        case 'coin':
+            scores.points += 1;
+            map.setCell(colission.x, colission.y, 'empty');
+            map.movePlayer(dx, dy);
             break;
     }
 }

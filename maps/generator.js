@@ -278,6 +278,8 @@ export const data = ({ x, y }) => {
         map[hole.y][hole.x] = ' ';
     }
 
+    const coinRooms = [];
+
     longest.forEach(room => room.connected = true);
     const queue = rooms.filter(room => !room.connected);
     while (queue.length > 0) {
@@ -289,10 +291,24 @@ export const data = ({ x, y }) => {
             map[hole.y][hole.x] = ' ';
             next.connected = true;
             connection.sideArms.push(next);
+            coinRooms.push(next);
         } else {
             queue.push(next);
         }
     }
+
+    while (coinRooms.length < 5) {
+        const coinCandidates = rooms.filter(room => coinRooms.indexOf(room) < 0);
+        coinRooms.push(coinCandidates[randomValue(0, coinCandidates.length - 1)]);
+    }
+
+    coinRooms.forEach(room => {
+        let coinPlace = room.randomPlace();
+        while(map[coinPlace.y][coinPlace.x] !== ' '){
+            let coinPlace = room.randomPlace();
+        };
+        map[coinPlace.y][coinPlace.x] = 'C';
+    });
 
     const possibleShortCuts = [];
     for (let i = 0; i < longest.length - 2; i++) {
@@ -316,7 +332,7 @@ export const data = ({ x, y }) => {
 
     const doorRoom2Index = placeDoor(map, longest, 3, longest.length - 2, 'd', 'k');
     const doorRoom1Index = placeDoor(map, longest, 0, doorRoom2Index - 1, 'D', 'K');
-    
+
     console.log(doorRoom1Index, doorRoom2Index);
 
     return map.map(row => row.join('')).join('\n');

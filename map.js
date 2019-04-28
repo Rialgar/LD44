@@ -8,6 +8,7 @@ const characterToState = {
     'K': 'key1',
     'd': 'door2',
     'k': 'key2',
+    'C': 'coin'
 }
 
 export default class Map {
