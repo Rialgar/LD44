@@ -28,7 +28,7 @@ const scores = {
 }
 
 const levels = [
-    //'intro'
+    'intro'
 ];
 
 const map = new Map();
@@ -93,11 +93,10 @@ const init = () => {
     window.addEventListener('keydown', onKeyDown);
     window.addEventListener('keyup', onKeyUp);
 
-    /*showText('Welcome. This game is played with WASD or Arrow Keys. To win a level [aqua]Y[]ou need to reach the [green]G[]oal. ' +
+    showText('Welcome. This game is played with WASD or Arrow Keys. To win a level [aqua]Y[]ou need to reach the [green]G[]oal. ' +
         'You can pay 10 seconds of lifetime to pass the [red]Ͳ[]rap, or take the long way around. ' +
         'Orange [darkorange]K[]eys open orange [darkorange]D[]oors. Blue [dodgerblue]k[]eys open blue [dodgerblue]d[]oors. ' +
-        'Press Enter or Space to start.');*/
-    unpause();
+        'Press Enter or Space to start.');
     inited = true;
 }
 
@@ -232,6 +231,8 @@ const handleCollision = (colission, dx, dy) => {
             map.setCell(colission.x, colission.y, 'empty');
             map.movePlayer(dx, dy);
             scores.points += 10;
+            scores.key1 = false;
+            scores.key2 = false;
             renderScores();
             pause();
             loadLevel();
