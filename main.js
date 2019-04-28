@@ -28,10 +28,15 @@ const scores = {
 }
 
 const levels = [
-    'intro'
+    'intro',
+    'generator',
+    'generator',
+    'generator',
+    'generator'
 ];
 
 const map = new Map();
+let inited = false;
 
 const init = () => {
     const table = document.getElementById('game');
@@ -92,10 +97,11 @@ const init = () => {
     window.addEventListener('keydown', onKeyDown);
     window.addEventListener('keyup', onKeyUp);
 
-    showText('Welcome. This game is played with WASD or Arrow Keys. To win a level [aqua]Y[]ou need to reach the [green]G[]oal. '+
-    'You can pay 10 seconds of lifetime to pass the [red]Ͳ[]rap, or take the long way around. '+
-    'Orange [darkorange]K[]eys open orange [darkorange]D[]oors. Blue [dodgerblue]k[]eys open blue [dodgerblue]d[]oors. '+
-    'Press Enter or Space to start.');
+    showText('Welcome. This game is played with WASD or Arrow Keys. To win a level [aqua]Y[]ou need to reach the [green]G[]oal. ' +
+        'You can pay 10 seconds of lifetime to pass the [red]Ͳ[]rap, or take the long way around. ' +
+        'Orange [darkorange]K[]eys open orange [darkorange]D[]oors. Blue [dodgerblue]k[]eys open blue [dodgerblue]d[]oors. ' +
+        'Press Enter or Space to start.');
+    inited = true;
 }
 
 const setCellContent = (x, y, character, color, opacity, textDecoration) => {
@@ -136,8 +142,6 @@ const renderScores = () => {
     const bufferSizeRight = width / 2 - scoreSizeRight;
     const bufferRight = symPad('', bufferSizeRight, ' ');
     scoreBufferRight.textContent = bufferRight;
-
-    console.log(scoreSizeLeft, bufferSizeLeft, scoreSizeRight, bufferSizeRight, width);
 }
 
 const render = (chunk) => {
@@ -230,6 +234,7 @@ const handleCollision = (colission, dx, dy) => {
             scores.level += 1;
             map.setCell(colission.x, colission.y, 'empty');
             map.movePlayer(dx, dy);
+            pause();
             loadLevel();
             break;
         case 'key1':
@@ -315,9 +320,12 @@ const loadLevel = async () => {
     const level = levels[scores.level];
     if (level) {
         await map.load(`./maps/${level}.js`);
+        if (inited) {
+            render(map.getChunk(0, 0, width, height));
+            unpause();
+        }
     } else {
         window.setTimeout(() => showText('Needs more levels!'));
-        pause();
         ended = true;
     }
 }

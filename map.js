@@ -14,11 +14,11 @@ export default class Map {
     tiles = [];
     whidth = 0;
     height = 0;
-    player = { x: 0, y: 0 };
+    player = { x: 5, y: 5 };
 
     async load(filename) {
         const module = await import(filename);
-        const data = module.data();
+        const data = module.data(this.player);
         const rows = data.split('\n');
         this.height = rows.length;
         this.width = rows[0].length;
