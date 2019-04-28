@@ -28,11 +28,7 @@ const scores = {
 }
 
 const levels = [
-    //'intro',
-    'generator',
-    'generator',
-    'generator',
-    'generator'
+    //'intro'
 ];
 
 const map = new Map();
@@ -235,6 +231,8 @@ const handleCollision = (colission, dx, dy) => {
             scores.level += 1;
             map.setCell(colission.x, colission.y, 'empty');
             map.movePlayer(dx, dy);
+            scores.points += 10;
+            renderScores();
             pause();
             loadLevel();
             break;
@@ -318,16 +316,11 @@ const onKeyUp = (evt) => {
 }
 
 const loadLevel = async () => {
-    const level = levels[scores.level];
-    if (level) {
-        await map.load(`./maps/${level}.js`);
-        if (inited) {
-            render(map.getChunk(0, 0, width, height));
-            unpause();
-        }
-    } else {
-        window.setTimeout(() => showText('Needs more levels!'));
-        ended = true;
+    const level = levels[scores.level] || 'generator';
+    await map.load(`./maps/${level}.js`);
+    if (inited) {
+        render(map.getChunk(0, 0, width, height));
+        unpause();
     }
 }
 
