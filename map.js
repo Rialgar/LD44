@@ -3,7 +3,11 @@ const characterToState = {
     ' ': 'empty',
     'Ͳ': 'shortcut',
     'G': 'goal',
-    'Y': 'player'
+    'Y': 'player',
+    'D': 'door1',
+    'K': 'key1',
+    'd': 'door2',
+    'k': 'key2',
 }
 
 export default class Map {

@@ -9,7 +9,11 @@ const states = {
     empty: { character: ' ' },
     shortcut: { character: 'Ͳ', color: 'red' },
     goal: { character: 'G', color: 'green' },
-    player: { character: 'Y', color: 'aqua' }
+    player: { character: 'Y', color: 'aqua' },
+    door1: { character: 'D', color: 'darkorange' },
+    key1: { character: 'K', color: 'darkorange' },
+    door2: { character: 'd', color: 'dodgerblue' },
+    key2: { character: 'k', color: 'dodgerblue' }
 };
 
 for (let [key, value] of Object.entries(states)) {
@@ -59,8 +63,16 @@ const init = () => {
     healthLabel.textContent = " Lifetime: ";
     const healthDom = document.createElement('span');
     scoresDom.appendChild(healthDom);
-    const scoreBuffer = document.createElement('span');
-    scoresDom.appendChild(scoreBuffer);
+    const scoreBufferLeft = document.createElement('span');
+    scoresDom.appendChild(scoreBufferLeft);
+    const key1Dom = document.createElement('span');
+    key1Dom.style.color = states.key1.color;
+    scoresDom.appendChild(key1Dom);
+    const key2Dom = document.createElement('span');
+    key2Dom.style.color = states.key2.color;
+    scoresDom.appendChild(key2Dom);
+    const scoreBufferRight = document.createElement('span');
+    scoresDom.appendChild(scoreBufferRight);
     const pointsLabel = document.createElement('span');
     scoresDom.appendChild(pointsLabel);
     pointsLabel.textContent = "Points: ";
@@ -68,7 +80,10 @@ const init = () => {
     scoresDom.appendChild(pointsDom);
 
     scores.healthDom = healthDom;
-    scores.scoreBuffer = scoreBuffer;
+    scores.scoreBufferLeft = scoreBufferLeft;
+    scores.key1Dom = key1Dom;
+    scores.key2Dom = key2Dom;
+    scores.scoreBufferRight = scoreBufferRight;
     scores.pointsDom = pointsDom;
 
     renderScores();
@@ -77,7 +92,10 @@ const init = () => {
     window.addEventListener('keydown', onKeyDown);
     window.addEventListener('keyup', onKeyUp);
 
-    showText('Welcome. This game is played with WASD or Arrow Keys. To win a level [aqua]Y[]ou need to reach the [green]G[]oal. You can pay 10 seconds of lifetime to pass the [red]Ͳ[]rap, or take the long way around. Press Enter or Space to Start.');
+    showText('Welcome. This game is played with WASD or Arrow Keys. To win a level [aqua]Y[]ou need to reach the [green]G[]oal. '+
+    'You can pay 10 seconds of lifetime to pass the [red]Ͳ[]rap, or take the long way around. '+
+    'Orange [darkorange]K[]eys open orange [darkorange]D[]oors. Blue [dodgerblue]k[]eys open blue [dodgerblue]d[]oors. '+
+    'Press Enter or Space to start.');
 }
 
 const setCellContent = (x, y, character, color, opacity, textDecoration) => {
@@ -101,18 +119,25 @@ const symPad = (string, length, char) => {
 }
 
 const renderScores = () => {
-    const { health, points, healthDom, pointsDom, scoreBuffer } = scores;
+    const { health, points, healthDom, pointsDom, scoreBufferLeft, scoreBufferRight, key1, key2, key1Dom, key2Dom } = scores;
 
-    const healthString = health + ' ';
-    const pointsString = points + ' ';
+    healthDom.textContent = health;
+    pointsDom.textContent = points + ' ';
+    key1Dom.textContent = key1 ? 'K' : ' ';
+    key2Dom.textContent = key2 ? 'k' : ' ';
 
-    healthDom.textContent = healthString;
-    pointsDom.textContent = pointsString;
 
-    const scoreSize = healthString.length + pointsString.length + ' Lifetime: Points: '.length;
-    const bufferSize = width - scoreSize;
-    const buffer = symPad('', bufferSize, ' ');
-    scoreBuffer.textContent = buffer;
+    const scoreSizeLeft = ` Lifetime: ${health}K`.length;
+    const bufferSizeLeft = width / 2 - scoreSizeLeft;
+    const bufferLeft = symPad('', bufferSizeLeft, ' ');
+    scoreBufferLeft.textContent = bufferLeft;
+
+    const scoreSizeRight = `kPoints: ${points} `.length;
+    const bufferSizeRight = width / 2 - scoreSizeRight;
+    const bufferRight = symPad('', bufferSizeRight, ' ');
+    scoreBufferRight.textContent = bufferRight;
+
+    console.log(scoreSizeLeft, bufferSizeLeft, scoreSizeRight, bufferSizeRight, width);
 }
 
 const render = (chunk) => {
@@ -127,7 +152,8 @@ const render = (chunk) => {
 let textShowing = false;
 const showText = (text) => {
     textShowing = true;
-    const padding = 3;
+    const margin = 3;
+    const padding = 2;
 
     const words = text.split(' ');
     let lines = [''];
@@ -135,7 +161,7 @@ const showText = (text) => {
     let lineLength = 0;
     words.forEach(word => {
         const wordLength = word.replace(/\[.*?\]/g, '').length;
-        if (lineLength + 1 + wordLength > width - 2 * (padding + 2)) {            
+        if (lineLength + 1 + wordLength > width - 2 * (margin + 1 + padding)) {
             lines.push(currentLine.trim());
             lines.push('');
             currentLine = word;
@@ -145,7 +171,7 @@ const showText = (text) => {
             lineLength += 1 + wordLength;
         }
     });
-    lines.push(currentLine);
+    lines.push(currentLine.trim());
     const colors = lines.map(line => {
         const changes = line.match(/\[.*?\]/g);
         if (changes) {
@@ -164,29 +190,28 @@ const showText = (text) => {
     });
     lines = lines.map((line, index) => {
         const pureText = line.replace(/\[.*?\]/g, '');
-        const padded = symPad(pureText, width - 2 * padding, ' ');
+        const padded = symPad(pureText, width - 2 * (margin + 1), ' ');
         const shift = padded.indexOf(pureText[0]);
         colors[index].forEach(color => color.pos += shift)
 
         return padded;
     });
-    console.log(lines, colors);
     let currentColor = '';
     for (let y = 0; y < height; y++) {
-        const line = lines[y - padding - 1];
-        const lineColors = colors[y - padding - 1] || [];
+        const line = lines[y - margin - 1];
+        const lineColors = colors[y - margin - 1] || [];
         let nextColor = lineColors.shift();
         for (let x = 0; x < width; x++) {
-            if (x < padding || x >= width - padding || y < padding || y >= height - padding) {
+            if (x < margin || x >= width - margin || y < margin || y >= height - margin) {
                 cells[x][y].style.opacity = '0.1';
-            } else if (x === padding || x === width - padding - 1 || y === padding || y === height - padding - 1) {
+            } else if (x === margin || x === width - margin - 1 || y === margin || y === height - margin - 1) {
                 setCellContent(x, y, '#', '');
             } else if (line) {
-                if (nextColor && nextColor.pos === x - padding) {
+                if (nextColor && nextColor.pos === x - (margin + 1)) {
                     currentColor = nextColor.color;
                     nextColor = lineColors.shift();
                 }
-                const character = line[x - padding];
+                const character = line[x - (margin + 1)];
                 setCellContent(x, y, character, currentColor, '', currentColor ? 'underline' : '');
             } else {
                 setCellContent(x, y, ' ', '');
@@ -206,6 +231,20 @@ const handleCollision = (colission, dx, dy) => {
             map.setCell(colission.x, colission.y, 'empty');
             map.movePlayer(dx, dy);
             loadLevel();
+            break;
+        case 'key1':
+        case 'key2':
+            scores[colission.current] = true;
+            map.setCell(colission.x, colission.y, 'empty');
+            map.movePlayer(dx, dy);
+            break;
+        case 'door1':
+        case 'door2':
+            const key = 'key' + colission.current.substr(-1);
+            if (scores[key]) {
+                map.setCell(colission.x, colission.y, 'empty');
+                scores[key] = false;
+            }
             break;
     }
 }
